@@ -1,0 +1,95 @@
+trigger CreateAssetonClosedWon on Opportunity (after insert, after update) {
+   for(Opportunity o: trigger.new){ 
+    if(o.isWon == true && o.HasOpportunityLineItem == true){
+     String opptyId = o.Id;
+     OpportunityLineItem[] OLI = [Select UnitPrice, Quantity, PricebookEntry.Product2Id, PricebookEntry.Product2.Name, Description, ServiceDate,  Converted_to_Asset__c, OpportunityId  
+                                  From OpportunityLineItem 
+                                  where OpportunityId = :opptyId  and Converted_to_Asset__c = false];
+    Quote SynchedQuote;
+    System.debug('List of opp Line Items:' + OLI);
+    try {
+      SynchedQuote = [SELECT Id, (SELECT Id ,ServiceDate, PricebookEntry.Product2Id, PricebookEntry.Product2.Name, Speed_RPM__c, Stages__c, FlowM3H__c, HeadM__c, Flowcalculated__c, Headcalculated__c, NPSHa__c, NPSHr__c, CasingCoverPressure__c, MaxDiameter__c, DesignedDiameter__c, ImpellerType__c, MaterialCode__c, Medium__c, Density__c, TemperatureC__c, SealingType__c, SealingMake__c, SealingName__c, CouplingMake__c, CouplingName__c, MotorIncluded__c, MotorName__c, MotorMake__c, DriveType__c, MotorSpeed__c, MotorVoltage__c, MotorPower_kW__c, MotorWeight__c, Baseframe__c FROM QuoteLineItems) FROM Quote WHERE IsSyncing = true AND OpportunityId = :opptyId Limit 1 ];
+    }
+    catch(exception e){
+      Trigger.New.get(0).addError('ERROR: There is no Sync Worksheet');
+    } 
+
+    System.debug('Quote ' + SynchedQuote);
+
+    Map<Id, QuoteLineItem> mapQuoteLineItembyOppLineItem = new Map<Id,QuoteLineItem>();
+    
+    for(OpportunityLineItem oppLItem: OLI){
+      for(QuoteLineItem q : SynchedQuote.QuoteLineItems){
+        if( 
+          oppLItem.PricebookEntry.Product2Id == q.PricebookEntry.Product2Id&&
+          oppLItem.ServiceDate == q.ServiceDate){
+
+          mapQuoteLineItembyOppLineItem.put(oppLItem.Id, q);
+          
+        }
+
+      }
+    }
+    System.debug('Map of quoteLItems by oppLItem' + mapQuoteLineItembyOppLineItem);
+
+     Asset[] ast = new Asset[]{};
+     Asset a = new Asset();
+     for(OpportunityLineItem ol: OLI){
+      a = new Asset();
+      a.AccountId = o.Asset_Account_ID__c;
+      if(o.Asset_Contact_ID__c != null) {
+        a.ContactId = o.Asset_Contact_ID__c;
+      }
+
+      a.Product2Id = ol.PricebookEntry.Product2Id;
+      a.Quantity = ol.Quantity;
+      a.Price =  ol.UnitPrice;
+      a.PurchaseDate = o.CloseDate;
+      a.Status = 'Purchased';
+      a.Description = ol.Description;
+      a.Name = ol.PricebookEntry.Product2.Name;
+      a.Asset_Opportunity__c = ol.OpportunityId;
+
+      //Get corresponding quote Line Item
+      QuoteLineItem qli = mapQuoteLineItembyOppLineItem.get(ol.Id);
+      if(qli != null){
+        a.Speed_RPM__c = qli.Speed_RPM__c;
+        a.Stages__c = qli.Stages__c;
+        a.FlowM3H__c = qli.FlowM3H__c;
+        a.HeadM__c = qli.HeadM__c;
+        a.Flowcalculated__c = qli.Flowcalculated__c;
+        a.Headcalculated__c = qli.Headcalculated__c;
+        a.NPSHa__c = qli.NPSHa__c;
+        a.NPSHr__c = qli.NPSHr__c;
+        a.CasingCoverPressure__c = qli.CasingCoverPressure__c;
+        a.MaxDiameter__c = qli.MaxDiameter__c;
+        a.DesignedDiameter__c = qli.DesignedDiameter__c;
+        a.ImpellerType__c = qli.ImpellerType__c;
+        a.MaterialCode__c = qli.MaterialCode__c;
+        a.Medium__c = qli.Medium__c;
+        a.Density__c = qli.Density__c;
+        a.TemperatureC__c = qli.TemperatureC__c;
+        a.SealingType__c = qli.SealingType__c;
+        a.SealingMake__c = qli.SealingMake__c;
+        a.SealingName__c = qli.SealingName__c;
+        a.CouplingMake__c = qli.CouplingMake__c;
+        a.CouplingName__c = qli.CouplingName__c;
+        a.MotorIncluded__c = qli.MotorIncluded__c;
+        a.MotorName__c = qli.MotorName__c;
+        a.MotorMake__c = qli.MotorMake__c;
+        a.DriveType__c = qli.DriveType__c;
+        a.MotorSpeed__c = qli.MotorSpeed__c;
+        a.MotorVoltage__c = qli.MotorVoltage__c;
+        a.MotorPower_kW__c = qli.MotorPower_kW__c;
+        a.MotorWeight__c = qli.MotorWeight__c;
+        a.Baseframe__c = qli.Baseframe__c;
+      }
+      
+      ast.add(a);
+      ol.Converted_to_Asset__c = true;
+     }
+    update OLI; 
+    insert ast;
+   }
+  }
+}
