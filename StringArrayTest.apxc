@@ -1,0 +1,12 @@
+public class StringArrayTest {
+    public static List<String> generateStringArray(integer arrayLen) {
+        List<String> arrayToReturn = new List<String>();
+        
+        for(integer i=0; i <= arrayLen; i++) {
+            arrayToReturn.add('Test '+ i);            
+        }
+        System.debug('Array To return ' + arrayToReturn);
+        return arrayToReturn;
+    }
+
+}
