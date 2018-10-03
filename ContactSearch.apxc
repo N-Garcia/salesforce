@@ -1,0 +1,14 @@
+public class ContactSearch {
+    public static List<Contact> searchForContacts(String lastName, String mailPostalCode) {
+        List<Contact> ctsFound;
+        try {
+           ctsFound = [Select lastName, MailingPostalCode From Contact Where lastName=:lastName AND MailingPostalCode=:mailPostalCode];
+        } catch (DmlException e) {
+            System.debug('A DML exception has occurred: ' + e.getMessage());
+            return null;
+        }
+        System.debug('Name of first associated contact: ' + ctsFound);
+        return ctsFound;        
+    }
+
+}
