@@ -9,7 +9,6 @@ Using an indexed field in your query doesn't always make it golden. You can do t
 
     ```
 
-    Copy
 
 -   Negative filter operators---Using operators such as !=, NOT LIKE, or EXCLUDES in your queries. For example:
 
@@ -18,7 +17,6 @@ Using an indexed field in your query doesn't always make it golden. You can do t
 
     ```
 
-    Copy
 
 -   Leading wildcards---Queries that use a leading wildcard, such as this:
 
@@ -27,7 +25,6 @@ Using an indexed field in your query doesn't always make it golden. You can do t
 
     ```
 
-    Copy
 
 -   Text fields with comparison operators---Using comparison operators, such as >, <, >=, or <=, with text-based fields. For example:
 
